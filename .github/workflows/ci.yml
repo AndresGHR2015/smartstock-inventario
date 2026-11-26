@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: inventory
+          POSTGRES_PASSWORD: inventory
+          POSTGRES_DB: inventory
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U inventory"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GOFLAGS: -mod=mod
+      TEST_DATABASE_URL: postgres://inventory:inventory@localhost:5432/inventory?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - run: go test -race -coverprofile=coverage.out ./internal/inventory/...
+      - run: go tool cover -func=coverage.out
+      - run: go tool cover -func=coverage.out | awk '/^total:/ {if ($3+0 < 60) exit 1}'
+      - run: go build ./cmd/inventory
+      - run: docker build -t smartstock-inventory .
