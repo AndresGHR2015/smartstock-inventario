@@ -48,6 +48,45 @@ func (s *Service) GetProduct(ctx context.Context, request *pb.GetProductRequest)
 	return &pb.GetProductResponse{Result: pb.GetProductResponse_FOUND, Product: product}, nil
 }
 
+func (s *Service) GetInventoryOverview(ctx context.Context, _ *pb.GetInventoryOverviewRequest) (*pb.GetInventoryOverviewResponse, error) {
+	const query = `
+		SELECT totals.critical, attention.sku, attention.name, attention.stock, attention.threshold
+		FROM (SELECT count(*)::integer AS critical FROM products WHERE stock <= threshold) totals
+		LEFT JOIN LATERAL (
+			SELECT sku, name, stock, threshold FROM products
+			WHERE stock::bigint * 2 <= threshold::bigint * 3
+			ORDER BY (stock <= threshold) DESC, stock - threshold, sku
+			LIMIT 4
+		) attention ON true
+		ORDER BY (attention.stock <= attention.threshold) DESC, attention.stock - attention.threshold, attention.sku
+	`
+	rows, err := s.DB.Query(ctx, query)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error consultando resumen de inventario")
+	}
+	defer rows.Close()
+
+	response := &pb.GetInventoryOverviewResponse{}
+	for rows.Next() {
+		product := &pb.Product{}
+		var sku *string
+		var name *string
+		var stock, threshold *int32
+		if err := rows.Scan(&response.CriticalCount, &sku, &name, &stock, &threshold); err != nil {
+			return nil, status.Error(codes.Internal, "error leyendo resumen de inventario")
+		}
+		if sku != nil {
+			product.Sku, product.Name = *sku, *name
+			product.Stock, product.Threshold = *stock, *threshold
+			response.Attention = append(response.Attention, product)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, status.Error(codes.Internal, "error leyendo resumen de inventario")
+	}
+	return response, nil
+}
+
 func (s *Service) DeductStock(ctx context.Context, request *pb.DeductStockRequest) (*pb.DeductStockResponse, error) {
 	if !valid(request.GetSaleId()) || !valid(request.GetSku()) || request.GetQuantity() <= 0 {
 		return &pb.DeductStockResponse{Result: pb.DeductStockResponse_INVALID_ARGUMENT}, nil

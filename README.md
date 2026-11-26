@@ -32,7 +32,7 @@ Este repositorio mantiene el código Go, las migraciones de Inventario, sus prue
 ### Contratos y generación
 
 El submódulo `vendor/smartstock-infra` fija la revisión
-`6237ae7a047c3a16077db5bdd51a6ee89f5f90f1`. Después de clonar:
+`9336529e839c465e1a28bc9976df7a177068ca94`. Después de clonar:
 
 ```sh
 git submodule update --init --recursive

@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	InventoryService_GetProduct_FullMethodName  = "/smartstock.inventory.v1.InventoryService/GetProduct"
-	InventoryService_DeductStock_FullMethodName = "/smartstock.inventory.v1.InventoryService/DeductStock"
+	InventoryService_GetProduct_FullMethodName           = "/smartstock.inventory.v1.InventoryService/GetProduct"
+	InventoryService_GetInventoryOverview_FullMethodName = "/smartstock.inventory.v1.InventoryService/GetInventoryOverview"
+	InventoryService_DeductStock_FullMethodName          = "/smartstock.inventory.v1.InventoryService/DeductStock"
 )
 
 // InventoryServiceClient is the client API for InventoryService service.
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InventoryServiceClient interface {
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*GetProductResponse, error)
+	GetInventoryOverview(ctx context.Context, in *GetInventoryOverviewRequest, opts ...grpc.CallOption) (*GetInventoryOverviewResponse, error)
 	DeductStock(ctx context.Context, in *DeductStockRequest, opts ...grpc.CallOption) (*DeductStockResponse, error)
 }
 
@@ -49,6 +51,16 @@ func (c *inventoryServiceClient) GetProduct(ctx context.Context, in *GetProductR
 	return out, nil
 }
 
+func (c *inventoryServiceClient) GetInventoryOverview(ctx context.Context, in *GetInventoryOverviewRequest, opts ...grpc.CallOption) (*GetInventoryOverviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInventoryOverviewResponse)
+	err := c.cc.Invoke(ctx, InventoryService_GetInventoryOverview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *inventoryServiceClient) DeductStock(ctx context.Context, in *DeductStockRequest, opts ...grpc.CallOption) (*DeductStockResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeductStockResponse)
@@ -64,6 +76,7 @@ func (c *inventoryServiceClient) DeductStock(ctx context.Context, in *DeductStoc
 // for forward compatibility.
 type InventoryServiceServer interface {
 	GetProduct(context.Context, *GetProductRequest) (*GetProductResponse, error)
+	GetInventoryOverview(context.Context, *GetInventoryOverviewRequest) (*GetInventoryOverviewResponse, error)
 	DeductStock(context.Context, *DeductStockRequest) (*DeductStockResponse, error)
 	mustEmbedUnimplementedInventoryServiceServer()
 }
@@ -77,6 +90,9 @@ type UnimplementedInventoryServiceServer struct{}
 
 func (UnimplementedInventoryServiceServer) GetProduct(context.Context, *GetProductRequest) (*GetProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProduct not implemented")
+}
+func (UnimplementedInventoryServiceServer) GetInventoryOverview(context.Context, *GetInventoryOverviewRequest) (*GetInventoryOverviewResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInventoryOverview not implemented")
 }
 func (UnimplementedInventoryServiceServer) DeductStock(context.Context, *DeductStockRequest) (*DeductStockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeductStock not implemented")
@@ -120,6 +136,24 @@ func _InventoryService_GetProduct_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InventoryService_GetInventoryOverview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInventoryOverviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).GetInventoryOverview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_GetInventoryOverview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).GetInventoryOverview(ctx, req.(*GetInventoryOverviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _InventoryService_DeductStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeductStockRequest)
 	if err := dec(in); err != nil {
@@ -148,6 +182,10 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProduct",
 			Handler:    _InventoryService_GetProduct_Handler,
+		},
+		{
+			MethodName: "GetInventoryOverview",
+			Handler:    _InventoryService_GetInventoryOverview_Handler,
 		},
 		{
 			MethodName: "DeductStock",
